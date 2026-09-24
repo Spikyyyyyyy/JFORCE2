@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feedback Form</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #ffffff;
+            color: #333333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .feedback-card {
+            width: 400px;
+            padding: 40px 30px;
+            background-color: #ffffff;
+            border: 1px solid #cccccc;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .feedback-card h1 {
+            font-size: 24px;
+            font-weight: normal;
+            margin-top: 0;
+            margin-bottom: 25px;
+            color: #111111;
+        }
+
+        .toggle-container {
+            width: 100%;
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .toggle-btn {
+            flex: 1;
+            padding: 10px;
+            font-size: 14px;
+            background-color: #e2e2e2;
+            border: 1px solid #b0b0b0;
+            color: #333333;
+            cursor: pointer;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        /* Active state for Add Feedback button matching wireframe */
+        .toggle-btn.active {
+            border: 2px solid #111111;
+            background-color: #d8d8d8;
+            font-weight: bold;
+        }
+
+        .toggle-btn:hover {
+            background-color: #cecece;
+        }
+
+        form {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .form-label {
+            font-size: 14px;
+            color: #333333;
+        }
+
+        .textarea-field {
+            width: 100%;
+            height: 120px;
+            padding: 12px;
+            font-size: 14px;
+            font-family: Arial, sans-serif;
+            color: #555555;
+            background-color: #ffffff;
+            border: 1px solid #b0b0b0;
+            box-sizing: border-box;
+            outline: none;
+            resize: vertical;
+        }
+
+        .textarea-field::placeholder {
+            color: #777777;
+        }
+
+        .textarea-field:focus {
+            border-color: #666666;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 10px;
+            font-size: 14px;
+            color: #000000;
+            background-color: #dcdcdc;
+            border: 1px solid #b0b0b0;
+            cursor: pointer;
+            box-sizing: border-box;
+            margin-top: 5px;
+        }
+
+        .submit-btn:hover {
+            background-color: #cecece;
+        }
+
+        @media (max-width: 440px) {
+            body {
+                padding: 16px;
+                height: auto;
+                min-height: 100vh;
+                box-sizing: border-box;
+            }
+
+            .feedback-card {
+                width: 100%;
+                padding: 30px 20px;
+            }
+
+            .toggle-container {
+                gap: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="feedback-card">
+        <h1>Feedback</h1>
+        
+        <div class="toggle-container">
+            <button type="button" class="toggle-btn active" id="addBtn" onclick="switchTab('add')">Add Feedback</button>
+            <button type="button" class="toggle-btn" id="editBtn" onclick="switchTab('edit')">Edit Feedback</button>
+        </div>
+
+        <form onsubmit="handleFeedbackSubmit(event)">
+            <label for="feedbackText" class="form-label">Your Feedback:</label>
+            <textarea id="feedbackText" class="textarea-field" placeholder="Write your feedback here..." required></textarea>
+            
+            <button type="submit" class="submit-btn">Submit</button>
+        </form>
+    </div>
+
+    <script>
+        async function switchTab(mode) {
+            const addBtn = document.getElementById('addBtn');
+            const editBtn = document.getElementById('editBtn');
+            const textarea = document.getElementById('feedbackText');
+
+            if (mode === 'add') {
+                addBtn.classList.add('active');
+                editBtn.classList.remove('active');
+                textarea.value = '';
+                textarea.placeholder = "Write your feedback here...";
+                return;
+            }
+
+            editBtn.classList.add('active');
+            addBtn.classList.remove('active');
+
+            try {
+                const response = await fetch("get_feedback.php");
+                const result = await response.json();
+
+                if (!response.ok || !result.success) {
+                    textarea.value = "";
+                    textarea.placeholder = "No feedback found to edit.";
+                    return;
+                }
+
+                const feedbacks = result.data || [];
+                textarea.value = feedbacks.length ? feedbacks[0].feedback_text : "";
+                textarea.placeholder = feedbacks.length ? "Edit your latest feedback..." : "No feedback found to edit.";
+            } catch (error) {
+                textarea.value = "";
+                textarea.placeholder = "Unable to load feedback.";
+            }
+        }
+
+        async function handleFeedbackSubmit(event) {
+            event.preventDefault();
+            const feedbackText = document.getElementById("feedbackText").value.trim();
+
+            if (!feedbackText) {
+                alert("Please enter your feedback.");
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append("feedback_text", feedbackText);
+
+                const response = await fetch("submit_feedback.php", {
+                    method: "POST",
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (!response.ok || !result.success) {
+                    alert(result.message || "Unable to submit feedback.");
+                    return;
+                }
+
+                window.location.href = "Admin.html";
+            } catch (error) {
+                alert("Unable to connect to the server. Please check XAMPP.");
+            }
+        }
+    </script>
+</body>
+</html>

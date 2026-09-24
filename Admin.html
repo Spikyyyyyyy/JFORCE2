@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Feedback Dashboard - Editable</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .dashboard-card {
+            background-color: #ffffff;
+            border: 1px solid #dcdcdc;
+            border-radius: 4px;
+            width: 800px;
+            padding: 30px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            box-sizing: border-box;
+        }
+
+        h2 {
+            text-align: center;
+            color: #222222;
+            margin-top: 0;
+            margin-bottom: 25px;
+            font-size: 22px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 25px;
+        }
+
+        th, td {
+            border: 1px solid #dcdcdc;
+            padding: 12px 10px;
+            text-align: left;
+            font-size: 14px;
+            vertical-align: middle;
+        }
+
+        th {
+            background-color: #f1f1f1;
+            color: #333333;
+            font-weight: bold;
+        }
+
+        td {
+            color: #333333;
+        }
+
+        .actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .btn {
+            background-color: #e2e2e2;
+            border: 1px solid #ccc;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #333;
+        }
+
+        .btn:hover {
+            background-color: #d4d4d4;
+        }
+
+        .btn-save {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+
+        .btn-save:hover {
+            background-color: #c3e6cb;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 6px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+
+        .logout-container {
+            text-align: center;
+        }
+
+        .logout-link {
+            color: #0000ee;
+            text-decoration: underline;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .logout-link:hover {
+            color: #0000cc;
+        }
+
+        @media (max-width: 700px) {
+            body {
+                align-items: flex-start;
+                padding: 16px;
+            }
+
+            .dashboard-card {
+                width: 100%;
+                padding: 20px;
+                overflow-x: auto;
+            }
+
+            table {
+                min-width: 620px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-card">
+        <h2>Admin Feedback Dashboard</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 8%;">ID</th>
+                    <th style="width: 47%;">Feedback</th>
+                    <th style="width: 20%;">Date</th>
+                    <th style="width: 25%;">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="feedback-table-body">
+                <tr>
+                    <td>1</td>
+                    <td class="feedback-text">Good</td>
+                    <td>24-09-2026</td>
+                    <td>
+                        <div class="actions">
+                            <button class="btn" onclick="viewFeedback(this)">View</button>
+                            <button class="btn" onclick="editFeedback(this)">Edit</button>
+                            <button class="btn" onclick="deleteFeedback(this)">Delete</button>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td class="feedback-text">Best</td>
+                    <td>24-09-2026</td>
+                    <td>
+                        <div class="actions">
+                            <button class="btn" onclick="viewFeedback(this)">View</button>
+                            <button class="btn" onclick="editFeedback(this)">Edit</button>
+                            <button class="btn" onclick="deleteFeedback(this)">Delete</button>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="logout-container">
+            <a href="logout.php" class="logout-link">Log Out</a>
+        </div>
+    </div>
+
+    <script>
+        async function loadFeedback() {
+            try {
+                const response = await fetch("get_feedback.php");
+                const result = await response.json();
+
+                if (!response.ok || !result.success) {
+                    if (response.status === 401) {
+                        window.location.href = "index.html";
+                        return;
+                    }
+                    alert(result.message || "Unable to load feedback.");
+                    return;
+                }
+
+                const tableBody = document.getElementById("feedback-table-body");
+                tableBody.innerHTML = "";
+
+                if (!result.data || !result.data.length) {
+                    tableBody.innerHTML = '<tr><td colspan="4">No feedback found.</td></tr>';
+                    return;
+                }
+
+                result.data.forEach((feedback, index) => {
+                    const row = document.createElement("tr");
+                    row.dataset.id = feedback.id;
+                    row.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td class="feedback-text"></td>
+                        <td>${feedback.date}</td>
+                        <td>
+                            <div class="actions">
+                                <button class="btn" onclick="viewFeedback(this)">View</button>
+                                <button class="btn" onclick="editFeedback(this)">Edit</button>
+                                <button class="btn" onclick="deleteFeedback(this)">Delete</button>
+                            </div>
+                        </td>`;
+                    row.querySelector(".feedback-text").textContent = feedback.feedback_text;
+                    tableBody.appendChild(row);
+                });
+            } catch (error) {
+                alert("Unable to connect to the server. Please check XAMPP.");
+            }
+        }
+
+        function viewFeedback(button) {
+            const row = button.closest('tr');
+            const feedbackText = row.querySelector('.feedback-text').innerText;
+            alert("Feedback Details:\n\n" + feedbackText);
+        }
+
+        function editFeedback(button) {
+            const row = button.closest('tr');
+            const feedbackCell = row.querySelector('.feedback-text');
+            const currentText = feedbackCell.innerText;
+
+            feedbackCell.innerHTML = "";
+            const input = document.createElement("input");
+            input.type = "text";
+            input.value = currentText;
+            feedbackCell.appendChild(input);
+
+            button.innerText = "Save";
+            button.className = "btn btn-save";
+            button.setAttribute("onclick", "saveFeedback(this)");
+        }
+
+        async function saveFeedback(button) {
+            const row = button.closest('tr');
+            const feedbackCell = row.querySelector('.feedback-text');
+            const inputField = feedbackCell.querySelector('input');
+            const newText = inputField.value.trim();
+            const feedbackId = row.dataset.id;
+
+            if (!newText) {
+                alert("Feedback cannot be empty.");
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append("id", feedbackId);
+                formData.append("feedback_text", newText);
+
+                const response = await fetch("update_feedback.php", {
+                    method: "POST",
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (!response.ok || !result.success) {
+                    alert(result.message || "Unable to update feedback.");
+                    return;
+                }
+
+                feedbackCell.innerText = newText;
+                button.innerText = "Edit";
+                button.className = "btn";
+                button.setAttribute("onclick", "editFeedback(this)");
+            } catch (error) {
+                alert("Unable to connect to the server. Please check XAMPP.");
+            }
+        }
+
+        async function deleteFeedback(button) {
+            if (!confirm("Are you sure you want to delete this feedback?")) {
+                return;
+            }
+
+            const row = button.closest('tr');
+            const feedbackId = row.dataset.id;
+
+            try {
+                const formData = new FormData();
+                formData.append("id", feedbackId);
+
+                const response = await fetch("delete_feedback.php", {
+                    method: "POST",
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (!response.ok || !result.success) {
+                    alert(result.message || "Unable to delete feedback.");
+                    return;
+                }
+
+                row.remove();
+            } catch (error) {
+                alert("Unable to connect to the server. Please check XAMPP.");
+            }
+        }
+
+        loadFeedback();
+    </script>
+
+</body>
+</html>
